@@ -4,3 +4,7 @@
 *.prefs
 
 target/classes/productNames.txt
+
+.project
+
+bin/productNames.txt
