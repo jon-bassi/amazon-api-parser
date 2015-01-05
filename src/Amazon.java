@@ -10,7 +10,7 @@ public class Amazon
    //code here
    
    private static final String baseURL = 
-         "https//www.amazpn.com/product-reviews/";
+         "https://www.amazon.com/product-reviews/";
    private static final String baseURL2 = 
          "ref=cm_cr_pr_top_link_?ie=UTF8&pageNumber=";
    private static final String baseURL3 = 
