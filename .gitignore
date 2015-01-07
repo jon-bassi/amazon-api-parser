@@ -8,3 +8,5 @@ target/classes/productNames.txt
 .project
 
 bin/productNames.txt
+
+*.txt
