@@ -10,3 +10,5 @@ target/classes/productNames.txt
 bin/productNames.txt
 
 *.txt
+
+src/Parser.java
