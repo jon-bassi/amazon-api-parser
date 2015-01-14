@@ -1,8 +1,12 @@
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
+import java.util.Scanner;
+import java.io.File;
 
 
 /**
@@ -93,5 +97,69 @@ public class Amazon
          e.printStackTrace();
          return "";
       }
+   }
+   
+   public void cleanReviews(File tempReviewFile, String productID) throws IOException
+   {
+      System.out.println("cleaning up reviews...");
+      
+      String data = "";
+      String filename = productID + " reviews.txt";
+      Scanner reviewInput = new Scanner(tempReviewFile);
+      
+      // burn first line
+      reviewInput.nextLine();
+      while (reviewInput.hasNext())
+      {
+         String next = reviewInput.nextLine();
+         if (next.contains("<div class=\"reviewText\">"))
+         {
+            data += "\n";
+            next = reviewInput.nextLine();
+         }
+         data += " " + next;
+      }
+      reviewInput.close();
+      FileWriter reviewFileEdit = new FileWriter(filename);
+      reviewFileEdit.write(data);
+      reviewFileEdit.close();
+      
+      System.out.println("...done");
+   }
+   
+   public void cleanRatings(File tempRatingsFile, String productID) throws IOException
+   {
+      System.out.println("cleaning up ratings...");
+      
+      String filename = productID + " stars.txt";
+      Scanner starInput = new Scanner(tempRatingsFile);
+      String data = "";
+      
+      // burn first line
+      starInput.nextLine();
+      while (starInput.hasNext())
+      {
+         for (int i = 0; i < 2; i++)
+         {
+            starInput.nextLine();
+            if (!starInput.hasNext())
+               break;
+         }
+         if (!starInput.hasNext())
+            break;
+         String next = starInput.nextLine();
+         while(!next.contains("<input type=\"image\""))
+         {
+            data +=next.charAt(29) + "\n";
+            starInput.nextLine();
+            next = starInput.nextLine();
+         }
+      }
+      starInput.close();
+      FileWriter starFileEdit = new FileWriter(filename);
+      starFileEdit.write(data);
+      starFileEdit.close();
+      
+      System.out.println("...done");
    }
 }
