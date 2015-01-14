@@ -2,9 +2,16 @@ import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 
 
-
+/**
+ * TODO:
+ * try to combine the reviews and ratings into one method, also, add in 
+ * the dates the reviews were written
+ * 
+ * @author jon-bassi
+ */
 
 public class Amazon
 {
@@ -19,7 +26,7 @@ public class Amazon
    
    public Amazon()
    {
-      
+      // empty
    }
    
    public String getProductURL(String productID)
@@ -32,7 +39,7 @@ public class Amazon
       return url + page + baseURL3;
    }
    
-   public String parseReviews(String url) throws IOException
+   public String parseReviews(String url) throws IOException, InterruptedException
    {
       try
       {
@@ -40,14 +47,19 @@ public class Amazon
       String output = doc.select("[class=\"reviewText\"]").toString();
       output = output.replaceAll("<br>","");
       output = output.replaceAll("</div>","");
-      output = output.replaceAll("\n","");
       return output;
       }
       catch (HttpStatusException e)
       {
-         System.out.println(url);
-         e.printStackTrace();
-         return "";
+         System.out.println("HTTP Exception, reconnecting in 2 sec");
+         Thread.sleep(2000);
+         return parseReviews(url);
+      }
+      catch (SocketTimeoutException e)
+      {
+         System.out.println("Timeout Exception, reconnecting in 2 sec");
+         Thread.sleep(2000);
+         return parseReviews(url);
       }
       catch (Exception e)
       {
@@ -56,7 +68,7 @@ public class Amazon
       }
    }
    
-   public String parseRatings(String url) throws IOException
+   public String parseRatings(String url) throws IOException, InterruptedException
    {
       try
       {
@@ -66,9 +78,15 @@ public class Amazon
       }
       catch (HttpStatusException e)
       {
-         System.out.println(url);
-         e.printStackTrace();
-         return "";
+         System.out.println("HTTP Exception, reconnecting in 2 sec");
+         Thread.sleep(2000);
+         return parseRatings(url);
+      }
+      catch (SocketTimeoutException e)
+      {
+         System.out.println("Timeout Exception, reconnecting in 2 sec");
+         Thread.sleep(2000);
+         return parseRatings(url);
       }
       catch (Exception e)
       {
