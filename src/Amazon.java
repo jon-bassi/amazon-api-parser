@@ -1,7 +1,6 @@
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
