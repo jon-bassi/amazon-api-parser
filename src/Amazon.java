@@ -18,8 +18,11 @@ import java.io.File;
 
 public class Amazon
 {
-   //code here
+   // product data
+   private static final String productHomeURL =
+         "https://www.amazon.com/dp/";
    
+   // reviews
    private static final String baseURL = 
          "https://www.amazon.com/product-reviews/";
    private static final String baseURL2 = 
@@ -27,9 +30,11 @@ public class Amazon
    private static final String baseURL3 = 
          "&showViewpoints=0&sortBy=bySubmissionDateDescending";
    
+   private int trycount;
+   
    public Amazon()
    {
-      // empty
+      trycount = 0;
    }
    
    public String getProductURL(String productID)
@@ -37,32 +42,102 @@ public class Amazon
       return baseURL + productID + baseURL2;
    }
    
-   public String getReviewURL(String url, int page)
+   public String getReviewURL(String productID, int page)
    {
-      return url + page + baseURL3;
+      return baseURL + productID + baseURL2 + page + baseURL3;
    }
    
-   public String parseReviews(String url) throws IOException, InterruptedException
+   public String parseProductInfo(String productID) throws IOException, InterruptedException
    {
-      try
+      if (++trycount > 4)
       {
-      Document doc = Jsoup.connect(url).ignoreContentType(true).get();
-      String output = doc.select("[class=\"reviewText\"]").toString();
-      output = output.replaceAll("<br>","");
-      output = output.replaceAll("</div>","");
-      return output;
+         System.out.println("Maximum number of try's reached, skipping " + productID);
+         return "";
+      }
+      String url = productHomeURL + productID;
+      try {
+         
+         
+         Document doc = Jsoup.connect(url).ignoreContentType(true).get();
+         String output = "";
+         
+         // productinfo
+         String[] piarr = doc.select("[id=\"feature-bullets\"] .a-list-item").toString().split("\n");
+         
+         for (int i = 0; i < piarr.length; i++)
+         {
+            String s = piarr[i];
+            s = s.trim().replaceAll("<span class=\"a-list-item\">", "");
+            s = s.replaceAll("</span>", "");
+            s = s.replaceAll("[,;'\"?()]", "");
+            if (!output.contains(s))
+               output += s + "\n";
+         }
+         
+         // technical details
+         String[] tdarr = doc.select("#technical-data .content li").toString().split("\n");
+         for (int i = 0; i < tdarr.length; i++)
+         {
+            String s = tdarr[i];
+            s = s.trim().replaceAll("<li>", "");
+            s = s.replaceAll("<b>", "");
+            s = s.replaceAll("</b>", "");
+            s = s.replaceAll("</li>", "");
+            s = s.replaceAll("[,;'\"?()]", "");
+            if (!output.contains(s))
+               output += s + "\n";
+         }
+         
+         // price
+         String price = doc.select("[id=\"priceblock_ourprice\"]").toString();
+         price = price.replace(("<span id=\"priceblock_ourprice\" class=\"a-size-medium a-color-price\">"), "");
+         price = price.replace("</span>", "");
+         output += "Price: " + price;
+         trycount = 0;
+         return output;
       }
       catch (HttpStatusException e)
       {
-         System.out.println("HTTP Exception, reconnecting in 2 sec");
+         System.out.println("count: " + trycount);
+         System.out.println("Error connecting to " + url + ", reconnecting in 2 sec");
          Thread.sleep(2000);
-         return parseReviews(url);
+         return parseProductInfo(productID);
       }
       catch (SocketTimeoutException e)
       {
          System.out.println("Timeout Exception, reconnecting in 2 sec");
          Thread.sleep(2000);
-         return parseReviews(url);
+         return parseProductInfo(productID);
+      }
+      catch (Exception e)
+      {
+         e.printStackTrace();
+         return "";
+      }
+   }
+   
+   public String parseReviews(String productID, int page) throws IOException, InterruptedException
+   {
+      try
+      {
+         String url = getReviewURL(productID,page);
+         Document doc = Jsoup.connect(url).ignoreContentType(true).get();
+         String output = doc.select("[class=\"reviewText\"]").toString();
+         output = output.replaceAll("<br>","");
+         output = output.replaceAll("</div>","");
+         return output;
+      }
+      catch (HttpStatusException e)
+      {
+         System.out.println("HTTP Exception, reconnecting in 2 sec");
+         Thread.sleep(2000);
+         return parseReviews(productID,page);
+      }
+      catch (SocketTimeoutException e)
+      {
+         System.out.println("Timeout Exception, reconnecting in 2 sec");
+         Thread.sleep(2000);
+         return parseReviews(productID,page);
       }
       catch (Exception e)
       {
@@ -98,32 +173,27 @@ public class Amazon
       }
    }
    
-   public void cleanReviews(File tempReviewFile, String productID) throws IOException
+   public String cleanReviews(String reviews) throws IOException
    {
       System.out.println("cleaning up reviews...");
       
       String data = "";
-      String filename = productID + " reviews.txt";
-      Scanner reviewInput = new Scanner(tempReviewFile);
+      String[] reviewarr = reviews.split("\n");
       
       // burn first line
-      reviewInput.nextLine();
-      while (reviewInput.hasNext())
+      for (int i = 1; i < reviewarr.length; i++)
       {
-         String next = reviewInput.nextLine();
+         String next = reviewarr[i];
          if (next.contains("<div class=\"reviewText\">"))
          {
             data += "\n";
-            next = reviewInput.nextLine();
+            next = reviewarr[++i];
          }
-         data += " " + next;
+         data += "" + next.trim();
       }
-      reviewInput.close();
-      FileWriter reviewFileEdit = new FileWriter(filename);
-      reviewFileEdit.write(data);
-      reviewFileEdit.close();
       
       System.out.println("...done");
+      return data;
    }
    
    public void cleanRatings(File tempRatingsFile, String productID) throws IOException
